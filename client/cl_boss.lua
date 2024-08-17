@@ -18,6 +18,18 @@ end
 
 exports('AddBossMenuItem', AddBossMenuItem)
 
+local function comma_value(amount)
+    local formatted = amount
+    while true do
+        local k
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        if (k == 0) then
+            break
+        end
+    end
+    return formatted
+end
+
 local function RemoveBossMenuItem(id)
     DynamicMenuItems[id] = nil
 end
@@ -79,7 +91,15 @@ RegisterNetEvent('qb-bossmenu:client:OpenMenu', function()
             params = {
                 event = 'qb-bossmenu:client:Wardrobe',
             }
-        }
+        },
+        {
+            header = Lang:t("body.money"),
+            txt = Lang:t("body.moneyd"),
+            icon = "fa-solid fa-sack-dollar",
+            params = {
+                event = "qb-bossmenu:client:SocietyMenu",
+            }
+        },
     }
 
     for _, v in pairs(DynamicMenuItems) do
@@ -172,6 +192,82 @@ RegisterNetEvent('qb-bossmenu:client:ManageEmployee', function(data)
         }
     }
     exports['qb-menu']:openMenu(EmployeeMenu)
+end)
+
+RegisterNetEvent('qb-bossmenu:client:SocietyMenu', function()
+    QBCore.Functions.TriggerCallback('qb-bossmenu:server:GetAccount', function(cb)
+        local SocietyMenu = {
+            {
+                header = Lang:t("body.balance").. comma_value(cb) .. " - " .. string.upper(PlayerJob.label),
+                isMenuHeader = true,
+                icon = "fa-solid fa-circle-info",
+            },
+            {
+                header = Lang:t("body.deposit"),
+                icon = "fa-solid fa-money-bill-transfer",
+                txt = Lang:t("body.depositd"),
+                params = {
+                    event = "qb-bossmenu:client:SocetyDeposit",
+                    args = comma_value(cb)
+                }
+            },
+            {
+                header = Lang:t("body.withdraw"),
+                icon = "fa-solid fa-money-bill-transfer",
+                txt = Lang:t("body.withdrawd"),
+                params = {
+                    event = "qb-bossmenu:client:SocetyWithDraw",
+                    args = comma_value(cb)
+                }
+            },
+            {
+                header = Lang:t("body.return"),
+                icon = "fa-solid fa-angle-left",
+                params = {
+                    event = "qb-bossmenu:client:OpenMenu",
+                }
+            },
+        }
+        exports['qb-menu']:openMenu(SocietyMenu)
+    end, PlayerJob.name)
+end)
+
+RegisterNetEvent('qb-bossmenu:client:SocetyDeposit', function(money)
+    local deposit = exports['qb-input']:ShowInput({
+        header = Lang:t("body.depositm").. money,
+        submitText = Lang:t("body.submit"),
+        inputs = {
+            {
+                type = 'number',
+                isRequired = true,
+                name = 'amount',
+                text = Lang:t("body.amount")
+            }
+        }
+    })
+    if deposit then
+        if not deposit.amount then return end
+        TriggerServerEvent("qb-bossmenu:server:depositMoney", tonumber(deposit.amount))
+    end
+end)
+
+RegisterNetEvent('qb-bossmenu:client:SocetyWithDraw', function(money)
+    local withdraw = exports['qb-input']:ShowInput({
+        header = Lang:t("body.withdrawm").. money,
+        submitText = "Confirm",
+        inputs = {
+            {
+                type = 'number',
+                isRequired = true,
+                name = 'amount',
+                text = Lang:t("body.amount")
+            }
+        }
+    })
+    if withdraw then
+        if not withdraw.amount then return end
+        TriggerServerEvent("qb-bossmenu:server:withdrawMoney", tonumber(withdraw.amount))
+    end
 end)
 
 RegisterNetEvent('qb-bossmenu:client:Wardrobe', function()

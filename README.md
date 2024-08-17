@@ -1,6 +1,4 @@
 
-Got it! Here's a revised version:
-
 Add the old export to make society management work again without requiring the new qb-banking.
 
 # License
